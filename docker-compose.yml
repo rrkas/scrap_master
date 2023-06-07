@@ -1,0 +1,8 @@
+version: '3.3'
+
+services:
+  app:
+    build: .
+    image: rrka79wal/scrap_master:0.0.1
+    volumes:
+      - .:/root/app/

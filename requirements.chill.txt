@@ -1,0 +1,9 @@
+black==23.3.0
+bs4==0.0.1
+pandas==2.0.2
+pip-chill==1.0.3
+pysocks==1.7.1
+scrapy==2.9.0
+selenium==4.9.1
+tqdm==4.65.0
+virtualenv==20.23.0

@@ -1,0 +1,6 @@
+application/pdf
+image/svg+xml
+image/png
+image/jpeg
+image/jpg
+text/plain
