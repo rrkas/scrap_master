@@ -2,7 +2,6 @@ import os, uuid, mimetypes, json
 import urllib.parse, urllib.request
 from config import Config
 import requests
-from requests import Response
 
 
 class BaseScrapper:
@@ -11,9 +10,9 @@ class BaseScrapper:
         self.visited_urls = dict()  # avoid loops, details of url visited
         self.scrapped_urls = set()
 
-        self.raw_file = self.config.output_dir / "data.raw.txt"
-        self.temp_file_obj = open(
-            self.raw_file,
+        self.raw_file_path = self.config.output_dir / "data.raw.txt"
+        self.raw_file_obj = open(
+            self.raw_file_path,
             "w",
             encoding="utf-8",
         )
@@ -52,9 +51,9 @@ class BaseScrapper:
             return (mime_type in self.config.scrap_mimes), (
                 mime_type in self.config.download_mimes
             )
-
         except BaseException as e:
-            print(url, e)
+            # print(url, e)
+            self.visited_urls[url] = {"error": str(e)}
 
         return False, False
 
@@ -68,7 +67,7 @@ class BaseScrapper:
 
             response = requests.get(url)
             mime_type = urllib.request.urlopen(url).info().get_content_type()
-            filename = f"{uuid.uuid4()}.{mimetypes.guess_extension(mime_type)}"
+            filename = f"{uuid.uuid4()}{mimetypes.guess_extension(mime_type)}"
             with open(downloads_dir / filename, "wb") as f:
                 f.write(response.content)
 
@@ -83,25 +82,39 @@ class BaseScrapper:
         except BaseException as e:
             self.visited_urls[url] = {"downloaded": False, "error": str(e)}
 
+        if len(self.downloads) % 5 == 0:
+            self.flush_all()
+
     def write_to_file(self, line: str):
-        self.temp_file_obj.write(line.strip() + "\n")
+        self.raw_file_obj.write(line.strip() + "\n")
         self.line_count += 1
         if self.line_count % 100 == 0:
-            self.temp_file_obj.flush()
+            self.flush_all()
 
-    def complete(self):
-        self.temp_file_obj.flush()
-        self.temp_file_obj.close()
+    def flush_all(self):
+        self.raw_file_obj.flush()
 
-        # print(self.mime_types)
-
+        # visited URLs
         with open(
             self.config.output_dir / "visited_urls.json",
             "w",
             encoding="utf-8",
         ) as f:
             json.dump(
-                self.visited_urls,
+                self.visited_urls.copy(),
+                f,
+                indent=4,
+                default=str,
+            )
+
+        # downloads info
+        with open(
+            self.config.output_dir / "downloads_info.json",
+            "w",
+            encoding="utf-8",
+        ) as f:
+            json.dump(
+                self.downloads.copy(),
                 f,
                 indent=4,
                 default=str,

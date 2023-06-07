@@ -22,6 +22,8 @@ class GenericBs4TextScrapper(BaseScrapper):
         ):
             urls = self.scrap_urls_batch(urls)
 
+        self.raw_file_obj.close()
+
     # recursively called for branching
     def scrap_urls_batch(self, urls: list):
         next_urls = []
@@ -70,7 +72,7 @@ class GenericBs4TextScrapper(BaseScrapper):
             try:
                 response = requests.get(url)
             except BaseException as e:
-                self.visited_urls[url] = {"errors": str(e)}
+                self.visited_urls[url] = {"error": str(e)}
                 return
 
             if response.status_code != 200:
@@ -80,9 +82,7 @@ class GenericBs4TextScrapper(BaseScrapper):
             # check if URL is file or html/ text file
             soup = BeautifulSoup(response.text, "html.parser")
 
-            for string in soup.stripped_strings:
-                for s in string.splitlines():
-                    self.write_to_file(s)
+            self.write_to_file(soup.get_text(separator="\n", strip=True))
 
             urls = [self.normalize_url(url, e["href"]) for e in soup.findAll(href=True)]
             next_urls.extend(urls)

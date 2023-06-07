@@ -31,7 +31,7 @@ parser.add_argument(
 # max_threads
 parser.add_argument(
     "--max_threads",
-    help="Parallel threads to use for scrapping",
+    help="Number of parallel threads to use for scrapping",
     default=cpu_count(),
     required=False,
     type=int,
@@ -49,8 +49,8 @@ parser.add_argument(
 # dedup_lines
 parser.add_argument(
     "--dedup_lines",
-    help="Output file for the scrapped data",
-    default=True,
+    help="Remove duplicate lines from output",
+    default=False,
     required=False,
     type=bool,
 )
@@ -58,7 +58,7 @@ parser.add_argument(
 # recursive
 parser.add_argument(
     "--recursive",
-    help="Recursively scrap all urls extracted from base_url",
+    help="Recursively scrap all urls extracted from base_url and then scrap them",
     action="store_true",
 )
 
@@ -71,7 +71,7 @@ parser.add_argument(
     type=int,
 )
 
-# recursive
+# download_files
 parser.add_argument(
     "--download_files",
     help="Downloads additional files like images, PDFs, etc",
@@ -79,10 +79,19 @@ parser.add_argument(
     default=False,
 )
 
-
 args = parser.parse_args()
 
 config = Config(args)
+
+if os.path.exists(config.output_dir):
+    for e in config.output_dir.glob("*"):
+        try:
+            if os.path.isdir(e):
+                shutil.rmtree(config.output_dir)
+            else:
+                os.remove(e)
+        except:
+            pass
 
 os.makedirs(config.output_dir, exist_ok=True)
 
@@ -102,14 +111,11 @@ with open(config.output_dir / "config.json", "w", encoding="utf-8") as f:
 
 print(config_json)
 
-# if os.path.exists(config.output_dir):
-#     shutil.rmtree(config.output_dir)
 
 scrapper: BaseScrapper = get_scrapper(config)
 scrapper.scrap()
-scrapper.complete()
 
 if config.dedup_lines:
     os.system(
-        f'sort "{scrapper.raw_file}" | uniq > "{config.output_dir}/data.dedup.txt"',
+        f'sort "{scrapper.raw_file_path}" | uniq > "{config.output_dir}/data.dedup.txt"',
     )
