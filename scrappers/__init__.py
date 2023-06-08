@@ -1,10 +1,8 @@
 from config import Config
 from .bs4_scrappers import *
+from .selenium_scrappers import *
 
-
-scrapper_options = [
-    GenericBs4TextScrapper,
-]
+scrapper_options = [GenericBs4TextScrapper, GenericSeleniumTextScrapper]
 
 
 def get_scrapper(config: Config):

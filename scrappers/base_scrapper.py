@@ -1,7 +1,8 @@
-import os, uuid, mimetypes, json
+import os, uuid, mimetypes, json, threading
 import urllib.parse, urllib.request
 from config import Config
 import requests
+from tqdm import tqdm
 
 
 class BaseScrapper:
@@ -25,13 +26,58 @@ class BaseScrapper:
         self.mime_types = {}
 
     def scrap(self):
-        pass
+        urls = self.scrap_urls_batch([self.config.base_url])
+        while (
+            self.config.recursive
+            and len(urls) > 0
+            and len(self.scrapped_urls) <= self.config.max_url_count
+        ):
+            urls = self.scrap_urls_batch(urls)
+
+        self.flush_all()
+        self.raw_file_obj.close()
 
     def scrap_urls_batch(self, urls: list):
-        pass
+        next_urls = []
+        page_threads = []
+
+        for url in tqdm(urls):
+            if len(self.scrapped_urls) >= self.config.max_url_count:
+                break
+
+            if url in self.visited_urls:
+                continue
+
+            t = threading.Thread(
+                target=self.scrap_single_url,
+                args=(url, next_urls),
+            )
+            t.start()
+            if (
+                len(self.scrapped_urls)
+                >= self.config.max_url_count - self.config.max_threads
+            ):
+                t.join()
+            page_threads.append(t)
+
+            while sum([t.is_alive() for t in page_threads]) >= self.config.max_threads:
+                if len(page_threads) > self.config.max_threads:
+                    page_threads = list(filter(lambda t: t.is_alive(), page_threads))
+
+                if (
+                    len(self.scrapped_urls)
+                    >= self.config.max_url_count - self.config.max_threads
+                ):
+                    for t in page_threads:
+                        t.join()
+
+        while any([t.is_alive() for t in page_threads]):
+            pass
+
+        return next_urls
 
     def scrap_single_url(self, url: str, next_urls: list):
-        pass
+        raise "Un-implemented"
 
     def can_scrap_url(self, url: str):
         # can_scrap, can_download
@@ -86,10 +132,11 @@ class BaseScrapper:
             self.flush_all()
 
     def write_to_file(self, line: str):
-        self.raw_file_obj.write(line.strip() + "\n")
-        self.line_count += 1
-        if self.line_count % 100 == 0:
-            self.flush_all()
+        for l in line.splitlines():
+            self.raw_file_obj.write(l.strip() + "\n")
+            self.line_count += 1
+            if self.line_count % 100 == 0:
+                self.flush_all()
 
     def flush_all(self):
         self.raw_file_obj.flush()

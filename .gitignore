@@ -1,10 +1,10 @@
 *.pyc
 config.json
 
-
+rnd/
 venv/
 temp/
 output/
 __pycache__/
-
+.ipynb_checkpoints/
 

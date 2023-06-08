@@ -15,8 +15,7 @@ parser.add_argument(
     "--scrapper_id",
     help="ID of scrapper to be used",
     choices=scrapper_ids,
-    default=scrapper_ids[0],
-    required=False,
+    required=True,
     type=str,
 )
 
@@ -41,7 +40,7 @@ parser.add_argument(
 parser.add_argument(
     "--output_dir",
     help="Output folder for the scrapped data",
-    default="/root/app/output",
+    default="./output",
     required=False,
     type=str,
 )
@@ -108,9 +107,6 @@ config_json = json.dumps(
 )
 with open(config.output_dir / "config.json", "w", encoding="utf-8") as f:
     f.write(config_json)
-
-print(config_json)
-
 
 scrapper: BaseScrapper = get_scrapper(config)
 scrapper.scrap()
