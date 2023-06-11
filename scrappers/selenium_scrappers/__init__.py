@@ -1,1 +1,2 @@
 from .generic_selenium_text_scrapper import GenericSeleniumTextScrapper
+from .generic_selenium_dom_tree_scrapper import GenericSeleniumDomTreeScrapper

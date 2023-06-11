@@ -1,13 +1,14 @@
 from config import Config
-from scrappers.base_scrapper import BaseTextScrapper
+from scrappers.base_scrapper import BaseDomTreeScrapper
 from scrappers.selenium_scrappers._driver import get_driver, By
+from scrappers.selenium_scrappers.utils import recursive_scrap_tree
 
 
-class GenericSeleniumTextScrapper(BaseTextScrapper):
-    scrapper_id = "generic_selenium_text"
+class GenericSeleniumDomTreeScrapper(BaseDomTreeScrapper):
+    scrapper_id = "generic_selenium_dom_tree"
 
     def __init__(self, config: Config):
-        BaseTextScrapper.__init__(self, config)
+        BaseDomTreeScrapper.__init__(self, config)
 
     def scrap_single_url(self, url: str, next_urls: list):
         if url in self.scrapped_urls:
@@ -18,8 +19,12 @@ class GenericSeleniumTextScrapper(BaseTextScrapper):
         if can_scrap:
             try:
                 driver = get_driver(url)
-                self.write_text_to_file(
-                    url, driver.find_element(By.XPATH, "/html/body").text.strip()
+
+                self.write_tree_to_file(
+                    url,
+                    recursive_scrap_tree(
+                        driver.find_element(By.XPATH, "/html"),
+                    ),
                 )
 
                 urls = [

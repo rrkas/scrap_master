@@ -4,7 +4,7 @@ from config import Config
 from scrappers import scrapper_options, get_scrapper
 from multiprocessing import cpu_count
 
-from scrappers.base_scrapper import BaseScrapper
+from scrappers.base_scrapper import BaseScrapper, BaseTextScrapper
 
 scrapper_ids = [e.scrapper_id for e in scrapper_options]
 
@@ -111,7 +111,7 @@ with open(config.output_dir / "config.json", "w", encoding="utf-8") as f:
 scrapper: BaseScrapper = get_scrapper(config)
 scrapper.scrap()
 
-if config.dedup_lines:
+if config.dedup_lines and isinstance(scrapper, BaseTextScrapper):
     os.system(
         f'sort "{scrapper.raw_file_path}" | uniq > "{config.output_dir}/data.dedup.txt"',
     )

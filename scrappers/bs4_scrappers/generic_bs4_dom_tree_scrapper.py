@@ -1,16 +1,16 @@
 import requests
 from config import Config
 from bs4 import BeautifulSoup
-from scrappers.base_scrapper import BaseTextScrapper
+from scrappers.base_scrapper import BaseDomTreeScrapper
+from scrappers.bs4_scrappers.utils import recursive_scrap_tree
 
 
-class GenericBs4TextScrapper(BaseTextScrapper):
-    scrapper_id = "generic_bs4_text"
+class GenericBs4DomTreeScrapper(BaseDomTreeScrapper):
+    scrapper_id = "generic_bs4_dom_tree"
 
     def __init__(self, config: Config):
-        BaseTextScrapper.__init__(self, config)
+        BaseDomTreeScrapper.__init__(self, config)
 
-    # extracts all text from the page
     # returns list of all urls on that page
     def scrap_single_url(self, url: str, next_urls: list):
         can_scrap, can_download = self.can_scrap_and_download(url)
@@ -28,7 +28,7 @@ class GenericBs4TextScrapper(BaseTextScrapper):
             # check if URL is file or html/ text file
             soup = BeautifulSoup(response.text, "html.parser")
 
-            self.write_text_to_file(url, soup.get_text(separator="\n", strip=True))
+            self.write_tree_to_file(url, recursive_scrap_tree(soup))
 
             urls = [self.normalize_url(url, e["href"]) for e in soup.findAll(href=True)]
             urls += [self.normalize_url(url, e["src"]) for e in soup.findAll(src=True)]
